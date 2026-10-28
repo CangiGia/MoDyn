@@ -51,6 +51,12 @@ class Function(ABC):
         """Shorthand for :meth:`value`."""
         return self.value(t)
 
+    def value_sym(self, t):
+        """Value as a CasADi expression of the symbolic time ``t``."""
+        raise NotImplementedError(
+            f"{type(self).__name__} has no symbolic formulation (value_sym)"
+        )
+
 
 class Constant(Function):
     """Constant function :math:`f(t) = c`.
@@ -65,6 +71,9 @@ class Constant(Function):
         self._c = float(c)
 
     def value(self, t: float) -> float:  # noqa: D102
+        return self._c
+
+    def value_sym(self, t):  # noqa: D102
         return self._c
 
     def derivative(self, t: float) -> float:  # noqa: D102
@@ -90,6 +99,9 @@ class Linear(Function):
         self._b = float(intercept)
 
     def value(self, t: float) -> float:  # noqa: D102
+        return self._a * t + self._b
+
+    def value_sym(self, t):  # noqa: D102
         return self._a * t + self._b
 
     def derivative(self, t: float) -> float:  # noqa: D102
@@ -129,6 +141,11 @@ class Sinusoidal(Function):
     def value(self, t: float) -> float:  # noqa: D102
         return self._A * np.sin(self._omega * t + self._phi) + self._c
 
+    def value_sym(self, t):  # noqa: D102
+        import casadi as ca
+
+        return self._A * ca.sin(self._omega * t + self._phi) + self._c
+
     def derivative(self, t: float) -> float:  # noqa: D102
         return self._A * self._omega * np.cos(self._omega * t + self._phi)
 
@@ -151,6 +168,9 @@ class Polynomial(Function):
 
     def value(self, t: float) -> float:  # noqa: D102
         return float(sum(c * t**i for i, c in enumerate(self._c)))
+
+    def value_sym(self, t):  # noqa: D102
+        return sum(float(c) * t**i for i, c in enumerate(self._c))
 
     def derivative(self, t: float) -> float:  # noqa: D102
         return float(sum(i * c * t ** (i - 1) for i, c in enumerate(self._c) if i > 0))
@@ -177,6 +197,10 @@ class UserDefined(Function):
 
     def value(self, t: float) -> float:  # noqa: D102
         return float(self._f(t))
+
+    def value_sym(self, t):  # noqa: D102
+        # Works when ``f`` is written with CasADi-compatible operations.
+        return self._f(t)
 
     def derivative(self, t: float) -> float:  # noqa: D102
         return float(self._df(t))

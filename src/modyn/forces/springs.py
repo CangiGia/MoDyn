@@ -148,3 +148,27 @@ class TSDA(Force):
             Qe[s + 3 : s + 7] += 2.0 * G.T @ tau_body
 
         return Qe
+
+    def wrench_sym(self, state, t):
+        """Equal and opposite forces along the marker line, with their body-frame torques."""
+        import casadi as ca
+
+        bi, bj = self._mi.parent, self._mj.parent
+        s_i, s_j = self._mi.position_local, self._mj.position_local
+        if self._l0 is None:
+            self._l0 = float(np.linalg.norm(bj.point_global(s_j) - bi.point_global(s_i)))
+
+        d = state.point(bj, s_j) - state.point(bi, s_i)
+        length = ca.sqrt(ca.mtimes(d.T, d))
+        e = d / length
+        l_dot = ca.mtimes(e.T, state.point_velocity(bj, s_j) - state.point_velocity(bi, s_i))
+        F = self._k * (length - self._l0) + self._c * l_dot + self._F_act(t)
+
+        out = []
+        for body, s_body, sign in ((bi, s_i, -1.0), (bj, s_j, 1.0)):
+            if state._is_ground(body):
+                continue
+            F_vec = sign * F * e
+            tau = ca.cross(ca.DM(s_body), ca.mtimes(state.A(body).T, F_vec))
+            out.append((body, F_vec, tau))
+        return out

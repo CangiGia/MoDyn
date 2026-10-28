@@ -58,3 +58,11 @@ class Gravity(Force):
             s = layout.offset(body)
             Qe[s : s + 3] = body.mass * self._g
         return Qe
+
+    def wrench_sym(self, state, t):
+        """Weight ``m g`` on every body, no torque about the centroid."""
+        import casadi as ca
+
+        g = ca.DM(self._g)
+        zero = ca.SX.zeros(3, 1)
+        return [(body, body.mass * g, zero) for body in state.layout.bodies]

@@ -38,13 +38,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 from numpy.typing import NDArray
 
-from ..math import quaternions as _q
 from ._common import (
     RowContribs,
     _add_block,
     assemble_rows,
+    dot1_row,
     dot2_row,
-    gamma_dot1,
 )
 from .base import Constraint, JacobianBlock
 from .functions import Function
@@ -55,29 +54,27 @@ if TYPE_CHECKING:
 __all__ = ["PrismaticDriver", "RevoluteDriver"]
 
 _EX = np.array([1.0, 0.0, 0.0])
+_EY = np.array([0.0, 1.0, 0.0])
 _EZ = np.array([0.0, 0.0, 1.0])
 
 
 class RevoluteDriver(Constraint):
     r"""Prescribes the rotation angle between two markers (1 equation).
 
-    The angle :math:`\theta(t)` is measured between the local x-arms of the
-    two markers about their common z-axis (the revolute axis).  The constraint
-    equation is
+    The angle :math:`\theta(t)` is the rotation of marker ``j`` with respect
+    to marker ``i`` about their common z-axis (the revolute axis). Writing
+    :math:`\mathbf u_{x,j} = \cos\theta\,\mathbf u_{x,i} + \sin\theta\,\mathbf u_{y,i}`,
+    the constraint equation is
 
     .. math::
 
-        \mathbf u_{x,i} \cdot \mathbf u_{x,j} - \cos(\theta(t)) = 0,
+        \sin\theta(t)\,(\mathbf u_{x,i}\cdot\mathbf u_{x,j})
+        - \cos\theta(t)\,(\mathbf u_{y,i}\cdot\mathbf u_{x,j}) = 0,
 
-    where :math:`\mathbf u_{x,i} = A_i\,\mathbf x'_{i}` and similarly for
-    :math:`j`.
-
-    .. warning::
-
-        The cosine formulation is non-singular for
-        :math:`\theta \in (0, \pi)` but degenerates near
-        :math:`\theta \in \{0, \pi\}`.  For oscillatory motion confined
-        to this range the constraint is well-conditioned.
+    where :math:`\mathbf u_{\bullet,i} = A_i\,\mathbf a'_{\bullet,i}`. The left
+    side equals :math:`\sin(\theta(t) - \theta_{rel})`, so the equation is
+    smooth for any angle (including full revolutions) and its Jacobian never
+    vanishes near the solution.
 
     Parameters
     ----------
@@ -106,6 +103,7 @@ class RevoluteDriver(Constraint):
         self._mj = marker_j
         self._fn = function
         self._x_i_body = marker_i.orientation_local @ _EX
+        self._y_i_body = marker_i.orientation_local @ _EY
         self._x_j_body = marker_j.orientation_local @ _EX
         self._t: float = 0.0
 
@@ -115,29 +113,36 @@ class RevoluteDriver(Constraint):
 
     def _make_row(self) -> RowContribs:
         bi, bj = self._mi.parent, self._mj.parent
-        u_xi = bi.rotation_matrix @ self._x_i_body
-        u_xj = bj.rotation_matrix @ self._x_j_body
+        r1 = dot1_row(self._mi, self._x_i_body, self._mj, self._x_j_body)
+        r2 = dot1_row(self._mi, self._y_i_body, self._mj, self._x_j_body)
 
         f = self._fn.value(self._t)
         fd = self._fn.derivative(self._t)
         fdd = self._fn.second_derivative(self._t)
-        cos_f = math.cos(f)
-        sin_f = math.sin(f)
+        s, c = math.sin(f), math.cos(f)
+        sd, cd = c * fd, -s * fd
+        sdd, cdd = c * fdd - s * fd**2, -s * fdd - c * fd**2
 
-        phi = float(u_xi @ u_xj) - cos_f
+        # Time derivatives of the two dot-1 kernels from the angular velocities.
+        u_xi = bi.rotation_matrix @ self._x_i_body
+        u_yi = bi.rotation_matrix @ self._y_i_body
+        u_xj = bj.rotation_matrix @ self._x_j_body
+        wi, wj = bi.omega_global, bj.omega_global
+        d1 = np.cross(wi, u_xi) @ u_xj + u_xi @ np.cross(wj, u_xj)
+        d2 = np.cross(wi, u_yi) @ u_xj + u_yi @ np.cross(wj, u_xj)
 
-        cross_ij = np.cross(u_xi, u_xj)
-        Jp_i = cross_ij @ (2.0 * _q.E(bi.quaternion))
-        Jp_j = -(cross_ij @ (2.0 * _q.E(bj.quaternion)))
+        phi = s * float(r1.phi) - c * float(r2.phi)
+        gamma = (
+            s * float(r1.gamma)
+            - c * float(r2.gamma)
+            - (2.0 * (sd * d1 - cd * d2) + sdd * float(r1.phi) - cdd * float(r2.phi))
+        )
 
         blocks: dict = {}
-        _add_block(blocks, bi, np.zeros(3), Jp_i)
-        _add_block(blocks, bj, np.zeros(3), Jp_j)
-
-        # gamma = gamma_dot1 + d²(cos θ)/dt² = gamma_dot1 - cos(f)·ḟ² - sin(f)·f̈
-        g_dot1 = gamma_dot1(bi.omega_global, u_xi, bj.omega_global, u_xj)
-        gamma = g_dot1 - cos_f * fd**2 - sin_f * fdd
-
+        for body, (J_R, J_p) in r1.blocks.items():
+            _add_block(blocks, body, s * J_R, s * J_p)
+        for body, (J_R, J_p) in r2.blocks.items():
+            _add_block(blocks, body, -c * J_R, -c * J_p)
         return RowContribs(phi=phi, gamma=gamma, blocks=blocks)
 
     def phi(self) -> NDArray[np.float64]:  # noqa: D102
@@ -148,6 +153,16 @@ class RevoluteDriver(Constraint):
 
     def gamma(self) -> NDArray[np.float64]:  # noqa: D102
         return assemble_rows([self._make_row()], self.n_eq)[2]
+
+    def phi_sym(self, state, t):  # noqa: D102
+        import casadi as ca
+
+        from ..symbolic import dot1
+
+        f = self._fn.value_sym(t)
+        d1 = dot1(state, self._mi, self._x_i_body, self._mj, self._x_j_body)
+        d2 = dot1(state, self._mi, self._y_i_body, self._mj, self._x_j_body)
+        return ca.sin(f) * d1 - ca.cos(f) * d2
 
 
 class PrismaticDriver(Constraint):
@@ -204,6 +219,11 @@ class PrismaticDriver(Constraint):
         phi_d = float(row_base.phi) - f
         gamma_d = float(row_base.gamma) + fdd
         return RowContribs(phi=phi_d, gamma=gamma_d, blocks=row_base.blocks)
+
+    def phi_sym(self, state, t):  # noqa: D102
+        from ..symbolic import dot2
+
+        return dot2(state, self._mi, self._z_i_body, self._mi, self._mj) - self._fn.value_sym(t)
 
     def phi(self) -> NDArray[np.float64]:  # noqa: D102
         return assemble_rows([self._make_row()], self.n_eq)[0]

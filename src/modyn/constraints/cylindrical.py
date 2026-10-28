@@ -86,3 +86,16 @@ class CylindricalJoint(Constraint):
     def gamma(self) -> NDArray[np.float64]:
         """Acceleration-level RHS for the 4 equations."""
         return assemble_rows(self._rows(), self.n_eq)[2]
+
+    def phi_sym(self, state, t):
+        """Symbolic residual of the 4 equations."""
+        import casadi as ca
+
+        from ..symbolic import dot1, dot2
+
+        return ca.vertcat(
+            dot1(state, self._mi, self._x_i_body, self._mj, self._z_j_body),
+            dot1(state, self._mi, self._y_i_body, self._mj, self._z_j_body),
+            dot2(state, self._mi, self._x_i_body, self._mi, self._mj),
+            dot2(state, self._mi, self._y_i_body, self._mi, self._mj),
+        )

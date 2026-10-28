@@ -100,3 +100,15 @@ class RevoluteJoint(Constraint):
     def gamma(self) -> NDArray[np.float64]:
         """Acceleration-level RHS for the 5 equations."""
         return assemble_rows(self._rows(), self.n_eq)[2]
+
+    def phi_sym(self, state, t):
+        """Symbolic residual: coincidence (3) and two axis-alignment rows (2)."""
+        import casadi as ca
+
+        from ..symbolic import coincidence, dot1
+
+        return ca.vertcat(
+            coincidence(state, self._mi, self._mj),
+            dot1(state, self._mi, self._x_i_body, self._mj, self._z_j_body),
+            dot1(state, self._mi, self._y_i_body, self._mj, self._z_j_body),
+        )

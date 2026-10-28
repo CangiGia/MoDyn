@@ -39,3 +39,15 @@ class Force(ABC):
         t
             Current simulation time.
         """
+
+    def wrench_sym(self, state, t):
+        r"""Symbolic contribution as a list of ``(body, F, tau_body)``.
+
+        ``F`` is the force on the centroid in the global frame and
+        ``tau_body`` the torque about the centroid in the body frame, both
+        CasADi ``SX`` columns. These are exactly the components of the force
+        on the quasi-velocities :math:`[\dot{\mathbf R}, \boldsymbol\omega']`.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} has no symbolic formulation (wrench_sym)"
+        )

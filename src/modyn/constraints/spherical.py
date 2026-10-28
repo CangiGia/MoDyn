@@ -85,3 +85,9 @@ class SphericalJoint(Constraint):
             \mathbf u_j)\bigr].
         """
         return assemble_rows(self._rows(), self.n_eq)[2]
+
+    def phi_sym(self, state, t):
+        """Symbolic residual :math:`r_i^P - r_j^P`."""
+        from ..symbolic import coincidence
+
+        return coincidence(state, self._mi, self._mj)

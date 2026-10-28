@@ -84,3 +84,16 @@ class PointForce(Force):
         Qe[s : s + 3] = F
         Qe[s + 3 : s + 7] = 2.0 * G.T @ tau_body
         return Qe
+
+    def wrench_sym(self, state, t):
+        """Force ``F`` at the marker and the induced body-frame torque ``s' x A^T F``."""
+        import casadi as ca
+
+        body = self._marker.parent
+        if state._is_ground(body):
+            return []
+        F = self._force_fn(t)
+        if not isinstance(F, ca.SX | ca.DM):
+            F = ca.vertcat(*np.asarray(F, dtype=object).ravel().tolist())
+        tau = ca.cross(ca.DM(self._marker.position_local), ca.mtimes(state.A(body).T, F))
+        return [(body, F, tau)]

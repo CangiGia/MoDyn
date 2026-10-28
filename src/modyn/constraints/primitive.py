@@ -67,6 +67,11 @@ class CoincidenceConstraint(Constraint):
     def gamma(self) -> NDArray[np.float64]:  # noqa: D102
         return assemble_rows([coincidence_rows(self._mi, self._mj)], self.n_eq)[2]
 
+    def phi_sym(self, state, t):  # noqa: D102
+        from ..symbolic import coincidence
+
+        return coincidence(state, self._mi, self._mj)
+
 
 class Dot1Constraint(Constraint):
     r"""One-equation orthogonality constraint :math:`\mathbf u_a \cdot \mathbf u_b = 0`.
@@ -113,6 +118,11 @@ class Dot1Constraint(Constraint):
     def gamma(self) -> NDArray[np.float64]:  # noqa: D102
         return assemble_rows([dot1_row(self._ma, self._va, self._mb, self._vb)], self.n_eq)[2]
 
+    def phi_sym(self, state, t):  # noqa: D102
+        from ..symbolic import dot1
+
+        return dot1(state, self._ma, self._va, self._mb, self._vb)
+
 
 class Dot2Constraint(Constraint):
     r"""One-equation constraint :math:`\mathbf u_a \cdot (\mathbf r_j^P - \mathbf r_i^P) = 0`.
@@ -158,3 +168,8 @@ class Dot2Constraint(Constraint):
 
     def gamma(self) -> NDArray[np.float64]:  # noqa: D102
         return assemble_rows([dot2_row(self._m_ax, self._v, self._m_i, self._m_j)], self.n_eq)[2]
+
+    def phi_sym(self, state, t):  # noqa: D102
+        from ..symbolic import dot2
+
+        return dot2(state, self._m_ax, self._v, self._m_i, self._m_j)

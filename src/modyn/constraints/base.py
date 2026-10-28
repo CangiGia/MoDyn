@@ -78,3 +78,21 @@ class Constraint(Base, ABC):
         (drivers) override this to update their internal time state before
         :meth:`phi`, :meth:`phi_q`, and :meth:`gamma` are called.
         """
+
+    def phi_sym(self, state, t):
+        r"""Return the residual :math:`\Phi(q, t)` as a CasADi ``SX`` column.
+
+        Parameters
+        ----------
+        state
+            :class:`~modyn.symbolic.state.SymbolicState` giving symbolic body
+            poses (and velocities).
+        t
+            ``SX`` scalar time symbol (used by rheonomic constraints).
+
+        The Jacobian, :math:`\Phi_t` and the acceleration terms are obtained
+        by automatic differentiation of this expression.
+        """
+        raise NotImplementedError(
+            f"{type(self).__name__} has no symbolic formulation (phi_sym)"
+        )
