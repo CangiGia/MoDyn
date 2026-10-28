@@ -23,6 +23,10 @@ build/
 # Large ADAMS animation exports
 *.avi
 
+# Regenerable validation outputs (python validation/run_modyn.py <model>, run_pmd.py)
+validation/*/MoDyn*/
+validation/double compound pendulum/PMD/
+
 # Pytest cache
 .pytest_cache/
 

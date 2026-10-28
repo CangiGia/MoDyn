@@ -11,10 +11,11 @@ where :math:`l` is the current distance, :math:`l_0` the natural length,
 :math:`k` the stiffness, :math:`c` the damping coefficient, and
 :math:`F_\text{act}` an optional actuator force.
 
-The corresponding generalized forces follow from virtual work: a force
-:math:`F\,\mathbf e` (with :math:`\mathbf e` the unit direction vector from
-marker :math:`i` to marker :math:`j`) is applied at the origin of marker
-:math:`j`, and :math:`-F\,\mathbf e` at the origin of marker :math:`i`.
+The corresponding generalized forces follow from virtual work. With
+:math:`\mathbf e` the unit vector from marker :math:`i` to marker :math:`j`, a
+positive :math:`F` (tension) pulls the two markers towards each other: the
+force :math:`F\,\mathbf e` acts at the origin of marker :math:`i` and
+:math:`-F\,\mathbf e` at the origin of marker :math:`j`.
 """
 
 from __future__ import annotations
@@ -134,7 +135,7 @@ class TSDA(Force):
         F = self._k * (l - self._l0) + self._c * l_dot + self._F_act(t)
         Qe = np.zeros(layout.n_coords, dtype=np.float64)
 
-        for body, s_body, sign in ((bi, s_i, -1.0), (bj, s_j, 1.0)):
+        for body, s_body, sign in ((bi, s_i, 1.0), (bj, s_j, -1.0)):
             try:
                 s = layout.offset(body)  # type: ignore[arg-type]
             except KeyError:
@@ -165,7 +166,7 @@ class TSDA(Force):
         F = self._k * (length - self._l0) + self._c * l_dot + self._F_act(t)
 
         out = []
-        for body, s_body, sign in ((bi, s_i, -1.0), (bj, s_j, 1.0)):
+        for body, s_body, sign in ((bi, s_i, 1.0), (bj, s_j, -1.0)):
             if state._is_ground(body):
                 continue
             F_vec = sign * F * e

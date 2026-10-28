@@ -1,0 +1,11 @@
+channel,pair,rms_pct,max_pct
+coordinates/Mass/y,MoDyn-ADAMS,0.0164682,0.0479059
+coordinates/Mass/y,PMD-ADAMS,0.0164682,0.0479059
+coordinates/Mass/y,MoDyn-PMD,2.26299e-13,4.08562e-13
+velocities/Mass/y,MoDyn-ADAMS,0.108479,0.306013
+velocities/Mass/y,PMD-ADAMS,0.108479,0.306013
+velocities/Mass/y,MoDyn-PMD,3.74645e-14,3.23557e-13
+accelerations/Mass/y,MoDyn-ADAMS,0.103085,0.30105
+accelerations/Mass/y,PMD-ADAMS,0.103085,0.30105
+accelerations/Mass/y,MoDyn-PMD,3.29205e-14,2.93099e-13
+scalar/Spring force,MoDyn-ADAMS,0.103085,0.30105

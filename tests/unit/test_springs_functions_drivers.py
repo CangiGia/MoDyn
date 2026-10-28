@@ -106,7 +106,7 @@ def test_tsda_zero_deformation():
 
 
 def test_tsda_tension():
-    """Stretched by Δl: Q_R on body 2 = k*Δl * e, on body 1 = -k*Δl * e."""
+    """Stretched by Δl: the spring pulls the bodies together."""
     k = 200.0
     l0 = 1.0
     dl = 0.5
@@ -118,12 +118,12 @@ def test_tsda_tension():
     tsda = TSDA(m1, m2, k=k, natural_length=l0)
     Qe = tsda.generalized_force(layout, t=0.0)
     F = k * dl
-    assert_allclose(Qe[0:3], np.array([-F, 0, 0]), atol=1e-12)  # body 1 pulled +x
-    assert_allclose(Qe[7:10], np.array([F, 0, 0]), atol=1e-12)  # body 2 pulled -x
+    assert_allclose(Qe[0:3], np.array([F, 0, 0]), atol=1e-12)  # body 1 pulled +x
+    assert_allclose(Qe[7:10], np.array([-F, 0, 0]), atol=1e-12)  # body 2 pulled -x
 
 
 def test_tsda_compression():
-    """Compressed: force is negative (compression)."""
+    """Compressed: the spring pushes the bodies apart."""
     b1 = _body(R=(0, 0, 0))
     b2 = _body(R=(0.5, 0, 0))  # shorter than l0=1
     layout = SystemCoordinates([b1, b2])
@@ -132,11 +132,12 @@ def test_tsda_compression():
     tsda = TSDA(m1, m2, k=100.0, natural_length=1.0)
     Qe = tsda.generalized_force(layout, t=0.0)
     F = 100.0 * (0.5 - 1.0)  # = -50 N
-    assert_allclose(Qe[0:3], np.array([-F, 0, 0]), atol=1e-12)  # -(-50) = +50 on body1
+    assert_allclose(Qe[0:3], np.array([F, 0, 0]), atol=1e-12)  # body 1 pushed -x
+    assert_allclose(Qe[7:10], np.array([-F, 0, 0]), atol=1e-12)  # body 2 pushed +x
 
 
 def test_tsda_damping():
-    """Bodies moving apart: l_dot > 0 → damping contributes positive F_c."""
+    """Bodies moving apart: l_dot > 0 → the damper pulls them back together."""
     c = 10.0
     vrel = 2.0
     b1 = _body(R=(0, 0, 0), v=(0, 0, 0))
@@ -147,7 +148,7 @@ def test_tsda_damping():
     tsda = TSDA(m1, m2, k=0.0, c=c, natural_length=1.0)
     Qe = tsda.generalized_force(layout, t=0.0)
     F = c * vrel
-    assert_allclose(Qe[7:10], np.array([F, 0, 0]), atol=1e-12)
+    assert_allclose(Qe[7:10], np.array([-F, 0, 0]), atol=1e-12)
 
 
 def test_tsda_lazy_natural_length():
@@ -165,7 +166,7 @@ def test_tsda_lazy_natural_length():
 
 
 def test_tsda_actuator_callable():
-    """Actuator callable: F_act(t=1.0) = 7.0 → reflected in Q_e."""
+    """Actuator callable: F_act(t=1.0) = 7.0 acts like a tension (pulls the markers together)."""
     b1 = _body(R=(0, 0, 0))
     b2 = _body(R=(1, 0, 0))
     layout = SystemCoordinates([b1, b2])
@@ -173,7 +174,7 @@ def test_tsda_actuator_callable():
     m2 = Marker(b2, position=(0, 0, 0))
     tsda = TSDA(m1, m2, k=0.0, natural_length=1.0, actuator=lambda t: 7.0 * t)
     Qe = tsda.generalized_force(layout, t=1.0)
-    assert_allclose(Qe[7:10], np.array([7.0, 0, 0]), atol=1e-12)
+    assert_allclose(Qe[7:10], np.array([-7.0, 0, 0]), atol=1e-12)
 
 
 def test_tsda_ground_marker():

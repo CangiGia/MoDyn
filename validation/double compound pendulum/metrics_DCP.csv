@@ -1,0 +1,13 @@
+channel,pair,rms_pct,max_pct
+coordinates/Link 1/x,MoDyn-PMD,0.00203524,0.0113017
+coordinates/Link 1/y,MoDyn-PMD,0.0011163,0.00527874
+coordinates/Link 2/x,MoDyn-PMD,0.00109012,0.0044783
+coordinates/Link 2/y,MoDyn-PMD,0.00100109,0.00434804
+velocities/Link 1/x,MoDyn-PMD,0.00144896,0.0109534
+velocities/Link 1/y,MoDyn-PMD,0.00171001,0.0119333
+velocities/Link 2/x,MoDyn-PMD,0.00124505,0.00501162
+velocities/Link 2/y,MoDyn-PMD,0.00292554,0.0400815
+accelerations/Link 1/x,MoDyn-PMD,0.0360419,2.50651
+accelerations/Link 1/y,MoDyn-PMD,0.195302,12.3486
+accelerations/Link 2/x,MoDyn-PMD,0.0690027,4.85011
+accelerations/Link 2/y,MoDyn-PMD,0.104672,6.61517

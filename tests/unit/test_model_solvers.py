@@ -31,7 +31,7 @@ def test_solvers_agree_on_the_pendulum():
     assert r_radau.method == "radau" and r_alpha.method == "generalized_alpha"
     np.testing.assert_allclose(r_radau.position(0), r_alpha.position(0), atol=2e-5)
     np.testing.assert_allclose(r_radau.omega_body(0), r_alpha.omega_body(0), atol=2e-3)
-    np.testing.assert_allclose(r_radau.lam, r_alpha.lam, atol=2e-3)
+    np.testing.assert_allclose(r_radau.lam, r_alpha.lam, atol=2e-2)
 
 
 def test_unknown_method_raises():

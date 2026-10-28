@@ -1,0 +1,79 @@
+channel,pair,rms_pct,max_pct
+coordinates/Crankshaft/x,MoDyn-ADAMS,1.23305e-05,2.49892e-05
+coordinates/Crankshaft/x,PMD-ADAMS,1.23797e-05,3.2182e-05
+coordinates/Crankshaft/x,MoDyn-PMD,1.175e-06,8.60208e-06
+coordinates/Crankshaft/y,MoDyn-ADAMS,1.14823e-05,2.49892e-05
+coordinates/Crankshaft/y,PMD-ADAMS,1.17274e-05,3.43021e-05
+coordinates/Crankshaft/y,MoDyn-PMD,2.52935e-06,9.51929e-06
+coordinates/Coupler/x,MoDyn-ADAMS,0.033229,0.0540686
+coordinates/Coupler/x,PMD-ADAMS,0.033229,0.0540686
+coordinates/Coupler/x,MoDyn-PMD,4.99297e-07,4.36928e-06
+coordinates/Coupler/y,MoDyn-ADAMS,0.043332,0.0607499
+coordinates/Coupler/y,PMD-ADAMS,0.0433322,0.0607499
+coordinates/Coupler/y,MoDyn-PMD,1.22584e-06,5.0305e-06
+coordinates/Follower/x,MoDyn-ADAMS,0.0557958,0.0737958
+coordinates/Follower/x,PMD-ADAMS,0.0557958,0.0737958
+coordinates/Follower/x,MoDyn-PMD,3.08415e-07,2.3963e-06
+coordinates/Follower/y,MoDyn-ADAMS,0.126827,0.156461
+coordinates/Follower/y,PMD-ADAMS,0.126827,0.156461
+coordinates/Follower/y,MoDyn-PMD,6.79829e-07,8.74695e-06
+velocities/Crankshaft/x,MoDyn-ADAMS,3.11592e-06,5.73054e-06
+velocities/Crankshaft/x,PMD-ADAMS,0.00764194,0.0591456
+velocities/Crankshaft/x,MoDyn-PMD,0.00764198,0.0591435
+velocities/Crankshaft/y,MoDyn-ADAMS,3.14671e-06,5.72912e-06
+velocities/Crankshaft/y,PMD-ADAMS,0.0150119,0.0649379
+velocities/Crankshaft/y,MoDyn-PMD,0.0150119,0.0649421
+velocities/Coupler/x,MoDyn-ADAMS,0.0521319,0.155416
+velocities/Coupler/x,PMD-ADAMS,0.0526625,0.155416
+velocities/Coupler/x,MoDyn-PMD,0.00754923,0.0589213
+velocities/Coupler/y,MoDyn-ADAMS,0.0702299,0.21438
+velocities/Coupler/y,PMD-ADAMS,0.0736001,0.21438
+velocities/Coupler/y,MoDyn-PMD,0.0175164,0.0790204
+velocities/Follower/x,MoDyn-ADAMS,0.0643146,0.191743
+velocities/Follower/x,PMD-ADAMS,0.0646626,0.191743
+velocities/Follower/x,MoDyn-PMD,0.00708628,0.0533999
+velocities/Follower/y,MoDyn-ADAMS,0.145557,0.44431
+velocities/Follower/y,PMD-ADAMS,0.147315,0.44431
+velocities/Follower/y,MoDyn-PMD,0.0126695,0.126826
+accelerations/Crankshaft/x,MoDyn-ADAMS,7.05236e-06,1.31249e-05
+accelerations/Crankshaft/x,PMD-ADAMS,192.583,1515.17
+accelerations/Crankshaft/x,MoDyn-PMD,12.2799,96.6139
+accelerations/Crankshaft/y,MoDyn-ADAMS,6.81982e-06,1.31246e-05
+accelerations/Crankshaft/y,PMD-ADAMS,600.542,2828.81
+accelerations/Crankshaft/y,MoDyn-PMD,20.5098,96.6099
+accelerations/Coupler/x,MoDyn-ADAMS,0.0691886,0.202841
+accelerations/Coupler/x,PMD-ADAMS,98.9671,876.469
+accelerations/Coupler/x,MoDyn-PMD,10.9083,96.6061
+accelerations/Coupler/y,MoDyn-ADAMS,0.181239,0.512343
+accelerations/Coupler/y,PMD-ADAMS,563.145,2850.22
+accelerations/Coupler/y,MoDyn-PMD,19.0882,96.6101
+accelerations/Follower/x,MoDyn-ADAMS,0.0910254,0.266854
+accelerations/Follower/x,PMD-ADAMS,112.345,1298.37
+accelerations/Follower/x,MoDyn-PMD,8.36002,96.6126
+accelerations/Follower/y,MoDyn-ADAMS,0.155084,0.438402
+accelerations/Follower/y,PMD-ADAMS,162.998,904.716
+accelerations/Follower/y,MoDyn-PMD,17.406,96.6102
+reaction/Ground - Crank/Fx,MoDyn-ADAMS,0.256499,0.748627
+reaction/Ground - Crank/Fx,PMD-ADAMS,0.428293,3.74682
+reaction/Ground - Crank/Fx,MoDyn-PMD,0.335781,3.49873
+reaction/Ground - Crank/Fy,MoDyn-ADAMS,0.106402,0.304263
+reaction/Ground - Crank/Fy,PMD-ADAMS,0.323051,3.73449
+reaction/Ground - Crank/Fy,MoDyn-PMD,0.30182,3.62377
+reaction/Crank - Coupler/Fx,MoDyn-ADAMS,0.256538,0.748743
+reaction/Crank - Coupler/Fx,PMD-ADAMS,0.418611,3.51481
+reaction/Crank - Coupler/Fx,MoDyn-PMD,0.323812,3.26831
+reaction/Crank - Coupler/Fy,MoDyn-ADAMS,0.146388,0.418595
+reaction/Crank - Coupler/Fy,PMD-ADAMS,0.419075,4.76106
+reaction/Crank - Coupler/Fy,MoDyn-PMD,0.387199,4.62035
+reaction/Coupler - Follower/Fx,MoDyn-ADAMS,0.256853,0.749607
+reaction/Coupler - Follower/Fx,PMD-ADAMS,0.293331,1.92024
+reaction/Coupler - Follower/Fx,MoDyn-PMD,0.143152,1.68465
+reaction/Coupler - Follower/Fy,MoDyn-ADAMS,0.139906,0.400123
+reaction/Coupler - Follower/Fy,PMD-ADAMS,0.300509,3.55574
+reaction/Coupler - Follower/Fy,MoDyn-PMD,0.268492,3.4189
+reaction/Follower - Ground/Fx,MoDyn-ADAMS,0.256994,0.749986
+reaction/Follower - Ground/Fx,PMD-ADAMS,0.272168,1.68067
+reaction/Follower - Ground/Fx,MoDyn-PMD,0.0923451,1.42122
+reaction/Follower - Ground/Fy,MoDyn-ADAMS,0.0837838,0.239638
+reaction/Follower - Ground/Fy,PMD-ADAMS,0.203662,2.12646
+reaction/Follower - Ground/Fy,MoDyn-PMD,0.188589,2.04794
