@@ -1,4 +1,4 @@
-"""Tests for ``aladyn.core``."""
+"""Tests for ``modyn.core``."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import logging
 import numpy as np
 import pytest
 
-from aladyn.core import (
+from modyn.core import (
     GRAVITY_SI,
     SI,
     Base,
@@ -152,5 +152,5 @@ def test_configure_logging_idempotent():
 def test_get_logger_namespacing():
     root = get_logger()
     child = get_logger("solver")
-    assert root.name == "aladyn"
-    assert child.name == "aladyn.solver"
+    assert root.name == "modyn"
+    assert child.name == "modyn.solver"

@@ -1,12 +1,12 @@
-"""Tests for ``aladyn.math.transforms``."""
+"""Tests for ``modyn.math.transforms``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.math import quaternions as q
-from aladyn.math.transforms import Transform, from_homogeneous
+from modyn.math import quaternions as q
+from modyn.math.transforms import Transform, from_homogeneous
 
 pytestmark = pytest.mark.unit
 

@@ -1,16 +1,16 @@
-"""Unit tests for ``aladyn.solver.kinematics``."""
+"""Unit tests for ``modyn.solver.kinematics``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.constraints import RevoluteJoint, SphericalJoint
-from aladyn.dynamics import SystemCoordinates
-from aladyn.dynamics.eom import constraint_jacobian, constraint_residual
-from aladyn.model.body import RigidBody
-from aladyn.model.marker import Marker
-from aladyn.solver.kinematics import (
+from modyn.constraints import RevoluteJoint, SphericalJoint
+from modyn.dynamics import SystemCoordinates
+from modyn.dynamics.eom import constraint_jacobian, constraint_residual
+from modyn.model.body import RigidBody
+from modyn.model.marker import Marker
+from modyn.solver.kinematics import (
     AssemblyResult,
     assemble_position,
     solve_velocity,

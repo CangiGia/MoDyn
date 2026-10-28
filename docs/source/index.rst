@@ -1,5 +1,5 @@
-ALADYN documentation
-====================
+MoDyn documentation
+===================
 
 .. toctree::
    :maxdepth: 2

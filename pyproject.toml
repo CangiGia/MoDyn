@@ -3,9 +3,9 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aladyn"
+name = "modyn"
 version = "0.0.1"
-description = "Automated Library for Advanced DYNamics — 3D rigid multibody simulation"
+description = "MoDyn — 3D rigid multibody dynamics (spatial evolution of PMD)"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Giacomo Cangi" }]
@@ -13,6 +13,7 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
+    "casadi>=3.6",
     "tqdm>=4.65",
 ]
 
@@ -70,8 +71,8 @@ convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["D"]              # tests do not need full docstrings
-"src/aladyn/**/__init__.py" = ["D104"]  # package docstrings already present; skip extras
-"src/aladyn/**/_*.py" = ["D"]        # private modules
+"src/modyn/**/__init__.py" = ["D104"]  # package docstrings already present; skip extras
+"src/modyn/**/_*.py" = ["D"]        # private modules
 
 [tool.ruff.format]
 quote-style = "double"

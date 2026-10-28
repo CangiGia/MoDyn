@@ -1,12 +1,12 @@
-"""Tests for ``aladyn.math.rotations``."""
+"""Tests for ``modyn.math.rotations``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.math import quaternions as q
-from aladyn.math.rotations import (
+from modyn.math import quaternions as q
+from modyn.math.rotations import (
     from_euler,
     is_rotation_matrix,
     matrix_to_quat,

@@ -1,11 +1,11 @@
-"""Tests for ``aladyn.math.vectors``."""
+"""Tests for ``modyn.math.vectors``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.math.vectors import as_vec3, cross, skew, unskew
+from modyn.math.vectors import as_vec3, cross, skew, unskew
 
 pytestmark = pytest.mark.unit
 

@@ -20,6 +20,9 @@ build/
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
+# Large ADAMS animation exports
+*.avi
+
 # Pytest cache
 .pytest_cache/
 

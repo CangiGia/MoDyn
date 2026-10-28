@@ -1,13 +1,13 @@
-"""Tests for ``aladyn.model``."""
+"""Tests for ``modyn.model``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.core.base import Base
-from aladyn.math import quaternions as q
-from aladyn.model import Ground, Marker, RigidBody
+from modyn.core.base import Base
+from modyn.math import quaternions as q
+from modyn.model import Ground, Marker, RigidBody
 
 pytestmark = pytest.mark.unit
 

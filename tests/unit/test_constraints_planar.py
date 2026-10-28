@@ -1,15 +1,15 @@
-"""Unit tests for ``aladyn.constraints.planar``."""
+"""Unit tests for ``modyn.constraints.planar``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.constraints import PlanarJoint
-from aladyn.constraints.base import Constraint
-from aladyn.math import quaternions as _q
-from aladyn.model.ground import Ground
-from aladyn.model.marker import Marker
+from modyn.constraints import PlanarJoint
+from modyn.constraints.base import Constraint
+from modyn.math import quaternions as _q
+from modyn.model.ground import Ground
+from modyn.model.marker import Marker
 
 from ._joint_helpers import (
     assert_gamma_matches_phi_ddot,

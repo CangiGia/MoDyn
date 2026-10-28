@@ -1,16 +1,16 @@
-"""Unit tests for ``aladyn.constraints.universal``."""
+"""Unit tests for ``modyn.constraints.universal``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.constraints import UniversalJoint
-from aladyn.constraints.base import Constraint
-from aladyn.math import quaternions as _q  # noqa: F401  (kept for parity with siblings)
-from aladyn.math.rotations import roty
-from aladyn.model.ground import Ground
-from aladyn.model.marker import Marker
+from modyn.constraints import UniversalJoint
+from modyn.constraints.base import Constraint
+from modyn.math import quaternions as _q  # noqa: F401  (kept for parity with siblings)
+from modyn.math.rotations import roty
+from modyn.model.ground import Ground
+from modyn.model.marker import Marker
 
 from ._joint_helpers import (
     assert_gamma_matches_phi_ddot,

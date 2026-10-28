@@ -1,15 +1,15 @@
-"""Unit tests for ``aladyn.dynamics.coordinates``."""
+"""Unit tests for ``modyn.dynamics.coordinates``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.dynamics import SystemCoordinates
-from aladyn.dynamics.coordinates import N_PER_BODY
-from aladyn.math import quaternions as _q
-from aladyn.model.body import RigidBody
-from aladyn.model.ground import Ground
+from modyn.dynamics import SystemCoordinates
+from modyn.dynamics.coordinates import N_PER_BODY
+from modyn.math import quaternions as _q
+from modyn.model.body import RigidBody
+from modyn.model.ground import Ground
 
 
 def _random_quat(rng: np.random.Generator) -> np.ndarray:

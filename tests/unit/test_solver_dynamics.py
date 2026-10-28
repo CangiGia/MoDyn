@@ -1,7 +1,7 @@
-"""Unit tests for ``aladyn.solver.dynamics``.
+"""Unit tests for ``modyn.solver.dynamics``.
 
 Validates :func:`integrate_dynamics` and the underlying
-:class:`~aladyn.solver.integrators.GeneralizedAlpha` kernel.
+:class:`~modyn.solver.integrators.GeneralizedAlpha` kernel.
 
 Test catalogue
 --------------
@@ -37,14 +37,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from aladyn.constraints import RevoluteJoint
-from aladyn.dynamics.coordinates import SystemCoordinates
-from aladyn.dynamics.eom import constraint_residual
-from aladyn.model.body import RigidBody
-from aladyn.model.ground import Ground
-from aladyn.model.marker import Marker
-from aladyn.solver.dynamics import DynamicsResult, integrate_dynamics
-from aladyn.solver.integrators import GeneralizedAlpha
+from modyn.constraints import RevoluteJoint
+from modyn.dynamics.coordinates import SystemCoordinates
+from modyn.dynamics.eom import constraint_residual
+from modyn.model.body import RigidBody
+from modyn.model.ground import Ground
+from modyn.model.marker import Marker
+from modyn.solver.dynamics import DynamicsResult, integrate_dynamics
+from modyn.solver.integrators import GeneralizedAlpha
 
 # ─── marker ───────────────────────────────────────────────────────────────────
 pytestmark = pytest.mark.unit

@@ -56,7 +56,7 @@ import numpy as np
 import pytest
 from numpy.testing import assert_allclose
 
-from aladyn.constraints import (
+from modyn.constraints import (
     CoincidenceConstraint,
     Constant,
     Dot1Constraint,
@@ -68,11 +68,11 @@ from aladyn.constraints import (
     Sinusoidal,
     UserDefined,
 )
-from aladyn.dynamics.coordinates import SystemCoordinates
-from aladyn.forces import TSDA
-from aladyn.model.body import RigidBody
-from aladyn.model.ground import Ground
-from aladyn.model.marker import Marker
+from modyn.dynamics.coordinates import SystemCoordinates
+from modyn.forces import TSDA
+from modyn.model.body import RigidBody
+from modyn.model.ground import Ground
+from modyn.model.marker import Marker
 
 pytestmark = pytest.mark.unit
 

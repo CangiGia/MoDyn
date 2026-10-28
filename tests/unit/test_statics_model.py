@@ -1,4 +1,4 @@
-"""Unit tests for ``aladyn.solver.statics`` and ``aladyn.solver.model``.
+"""Unit tests for ``modyn.solver.statics`` and ``modyn.solver.model``.
 
 Test catalogue
 --------------
@@ -30,15 +30,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from aladyn.constraints import SphericalJoint
-from aladyn.dynamics.coordinates import SystemCoordinates
-from aladyn.forces import Gravity
-from aladyn.model.body import RigidBody
-from aladyn.model.ground import Ground
-from aladyn.model.marker import Marker
-from aladyn.solver.dynamics import DynamicsResult
-from aladyn.solver.model import SpatialMultibodyModel
-from aladyn.solver.statics import StaticsResult, find_equilibrium
+from modyn.constraints import SphericalJoint
+from modyn.dynamics.coordinates import SystemCoordinates
+from modyn.forces import Gravity
+from modyn.model.body import RigidBody
+from modyn.model.ground import Ground
+from modyn.model.marker import Marker
+from modyn.solver.dynamics import DynamicsResult
+from modyn.solver.model import SpatialMultibodyModel
+from modyn.solver.statics import StaticsResult, find_equilibrium
 
 pytestmark = pytest.mark.unit
 

@@ -1,22 +1,22 @@
-"""Unit tests for ``aladyn.constraints.lower_pair``."""
+"""Unit tests for ``modyn.constraints.spherical``."""
 
 from __future__ import annotations
 
 import numpy as np
 import pytest
 
-from aladyn.constraints import SphericalJoint
-from aladyn.constraints.base import Constraint
-from aladyn.math import quaternions as _q
-from aladyn.model.body import RigidBody
-from aladyn.model.ground import Ground
-from aladyn.model.marker import Marker
+from modyn.constraints import SphericalJoint
+from modyn.constraints.base import Constraint
+from modyn.math import quaternions as _q
+from modyn.model.body import RigidBody
+from modyn.model.ground import Ground
+from modyn.model.marker import Marker
 
 
 @pytest.fixture(autouse=True)
 def _reset_singletons():
     # Reset Ground singleton + per-class counters between tests.
-    from aladyn.core.base import Base
+    from modyn.core.base import Base
 
     Ground._instance = None
     Base.reset_all_counts()

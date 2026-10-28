@@ -1,6 +1,6 @@
 """Sphinx configuration — to be filled in once the API stabilizes."""
 
-project = "ALADYN"
+project = "MoDyn"
 author = "Giacomo Cangi"
 release = "0.0.1"
 

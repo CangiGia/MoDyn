@@ -1,4 +1,4 @@
-"""Unit tests for ``aladyn.forces``.
+"""Unit tests for ``modyn.forces``.
 
 Test catalogue
 --------------
@@ -27,11 +27,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from aladyn.dynamics.coordinates import SystemCoordinates
-from aladyn.forces import Gravity, PointForce, UserForce, to_force_fn
-from aladyn.math import quaternions as _q
-from aladyn.model.body import RigidBody
-from aladyn.model.marker import Marker
+from modyn.dynamics.coordinates import SystemCoordinates
+from modyn.forces import Gravity, PointForce, UserForce, to_force_fn
+from modyn.math import quaternions as _q
+from modyn.model.body import RigidBody
+from modyn.model.marker import Marker
 
 pytestmark = pytest.mark.unit
 

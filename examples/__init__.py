@@ -1,4 +1,4 @@
-"""ALADYN runnable examples.
+"""MoDyn runnable examples.
 
 Each example is a self-contained script that builds a model, runs an
 analysis and (optionally) plots the results into ``examples/results/``.

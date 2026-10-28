@@ -1,4 +1,4 @@
-"""Shared pytest fixtures for ALADYN.
+"""Shared pytest fixtures for MoDyn.
 
 To be implemented as the codebase grows.
 """

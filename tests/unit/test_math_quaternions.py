@@ -1,7 +1,7 @@
-"""Tests for ``aladyn.math.quaternions``.
+"""Tests for ``modyn.math.quaternions``.
 
 These tests cover the algebraic and kinematic identities that the rest of
-ALADYN will rely on. A bug here propagates to every dynamic simulation,
+MoDyn will rely on. A bug here propagates to every dynamic simulation,
 so the suite is intentionally redundant.
 """
 
@@ -10,7 +10,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from aladyn.math.quaternions import (
+from modyn.math.quaternions import (
     A,
     E,
     G,
@@ -27,7 +27,7 @@ from aladyn.math.quaternions import (
     rotate,
     to_axis_angle,
 )
-from aladyn.math.vectors import skew
+from modyn.math.vectors import skew
 
 pytestmark = pytest.mark.unit
 

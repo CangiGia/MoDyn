@@ -1,6 +1,6 @@
 # Reference material
 
-Books, papers and external code consulted while designing ALADYN.
+Books, papers and external code consulted while designing MoDyn.
 **Not** distributed with the package — keep proprietary content out of
 version control.
 

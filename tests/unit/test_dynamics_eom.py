@@ -1,16 +1,16 @@
-"""Unit tests for ``aladyn.dynamics.eom``."""
+"""Unit tests for ``modyn.dynamics.eom``."""
 
 from __future__ import annotations
 
 import numpy as np
 
-from aladyn.constraints import SphericalJoint
-from aladyn.dynamics import SystemCoordinates
-from aladyn.dynamics import eom as _eom
-from aladyn.math import quaternions as _q
-from aladyn.model.body import RigidBody
-from aladyn.model.ground import Ground
-from aladyn.model.marker import Marker
+from modyn.constraints import SphericalJoint
+from modyn.dynamics import SystemCoordinates
+from modyn.dynamics import eom as _eom
+from modyn.math import quaternions as _q
+from modyn.model.body import RigidBody
+from modyn.model.ground import Ground
+from modyn.model.marker import Marker
 
 
 def _random_quat(rng: np.random.Generator) -> np.ndarray:

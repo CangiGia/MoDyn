@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from aladyn.math import quaternions as _q
-from aladyn.model.body import RigidBody
+from modyn.math import quaternions as _q
+from modyn.model.body import RigidBody
 
 __all__ = [
     "assert_gamma_matches_phi_ddot",

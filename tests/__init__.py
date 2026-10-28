@@ -1,4 +1,4 @@
-"""ALADYN test suite.
+"""MoDyn test suite.
 
 Layout
 ------

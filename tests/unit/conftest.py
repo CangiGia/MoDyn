@@ -10,8 +10,8 @@ from __future__ import annotations
 
 import pytest
 
-from aladyn.core.base import Base
-from aladyn.model.ground import Ground
+from modyn.core.base import Base
+from modyn.model.ground import Ground
 
 
 @pytest.fixture(autouse=True)
