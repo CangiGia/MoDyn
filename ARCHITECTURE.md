@@ -1,180 +1,168 @@
-# ALADYN — Architecture & Design Decisions
+# MoDyn — Architecture & Design Decisions
 
-> **Automated Library for Advanced DYNamics** — 3D rigid multibody simulation
-> in Python, evolution of [PMD](../PMD) (planar) into the spatial domain.
+> 3D rigid multibody simulation in Python, spatial evolution of
+> [PMD](https://github.com/CangiGia/PMD) (planar). Work in progress.
 
-This document fixes the foundational design choices. Every contributor (and
-future-self) must read it before adding code. Deviations require an explicit
-update here.
+This document fixes the foundational design choices. Deviations require an
+explicit update here.
 
 ---
 
 ## 1. Scope
 
-In-scope **now** (v0.x):
+Implemented:
 - 3D rigid bodies with absolute coordinates.
-- Lower-pair joints (Revolute, Prismatic, Spherical, Cylindrical, Universal,
-  Planar) and primitive constraints (sph–sph distance, dot-1, dot-2, …).
-- Applied forces and torques, gravity, TSDA / RSDA elements, user-defined
-  forces.
-- DAE-index-3 dynamics with Baumgarte stabilization (and projection as
-  fallback).
-- Initial assembly via Newton–Raphson on position constraints.
-- Kinematic, static and dynamic analyses.
-- Examples, regression tests, Sphinx docs.
+- Lower-pair joints (Spherical, Revolute, Prismatic, Cylindrical, Planar,
+  Universal), primitive constraints (coincidence, dot-1, dot-2) and
+  rotational / prismatic drivers.
+- Applied forces and torques, gravity, TSDA, user-defined forces (numeric
+  solver only).
+- Hybrid assembly: BFS spanning tree, placement from joint coordinates `q0`,
+  minimum-norm Newton loop closure.
+- Automatic detection of redundant constraint rows (planar mechanisms in 3D).
+- Dynamic analysis with two solvers (Radau IIA, generalized-α), static
+  equilibrium, joint reactions.
+- Validation against PMD, ADAMS and analytical references (`validation/`).
 
-In-scope as **architectural placeholders** (modules reserved, implemented later):
-- Contact / collision (`contact/`).
-- Flexible bodies via Floating Frame of Reference (`model/flex_body.py`).
-- Sensors (`sensors/`), actuators (`actuators/`), control loops (`control/`).
-- Pre/post-processor GUI (`gui/`, mirroring PMD).
-- Exporters (URDF, MBDyn, FMI/FMU) under `io/`.
+Architectural placeholders (modules reserved, not implemented): contact /
+collision (`contact/`), flexible bodies (`model/flex_body.py`), sensors,
+actuators, control loops, GUI (`gui/`), exporters and serialization (`io/`).
 
-Out-of-scope: real-time, GPU, distributed solvers.
+Out of scope: real-time, GPU, distributed solvers.
 
 ---
 
 ## 2. Reference textbook
 
 **Primary:** A. A. Shabana — *Computational Dynamics* (3rd ed.) and *Dynamics
-of Multibody Systems* (4th ed.).
-
-Notation, symbol names and equation numbers cited in docstrings refer to
-Shabana unless stated otherwise. Secondary references (Nikravesh, Haug,
-Featherstone) may be cited when their formulation is clearer for a specific
-topic.
+of Multibody Systems* (4th ed.). Notation and equation numbers cited in
+docstrings refer to Shabana unless stated otherwise.
 
 ---
 
-## 3. Orientation parametrization
+## 3. Orientation and velocity variables
 
-**Primary:** Euler parameters (unit quaternions), `p = [e0, e1, e2, e3]^T`,
-with the constraint `p^T p = 1`.
+Orientation: **Euler parameters** (unit quaternions), `p = [e0, e1, e2, e3]ᵀ`,
+`pᵀp = 1`. No singularities. Euler/Cardan angles exist only as input/output
+utilities in `math/rotations.py`, never as state variables.
 
-Rationale:
-- No singularities (gimbal lock) — required for general spatial motion.
-- Linear in the rotation matrix `A(p)`.
-- Standard in modern multibody codes (ADAMS, MBDyn, Chrono).
-- Shabana ch. 2 / ch. 6 develops the entire formulation in Euler parameters.
+- `A(p) = (2e0² − 1) I + 2 (e eᵀ + e0 ẽ)` maps body to global axes.
+- `ω' = 2 G(p) ṗ` (body frame), `ω = 2 E(p) ṗ` (global frame),
+  `ṗ = ½ G(p)ᵀ ω'` on the unit sphere.
 
-Conventions:
-- Angular velocity in the **body frame** is `ω' = 2 G(p) ṗ` (Shabana eq. 2.107).
-- Angular velocity in the **global frame** is `ω = 2 E(p) ṗ`.
-- `G` and `E` are the 3×4 transformation matrices defined in Shabana ch. 2.
-- Euler/Cardan angles are supported only as **input/output utilities** in
-  `math/rotations.py`, never as state variables.
+Positions per body: `q_i = [R_iᵀ, p_iᵀ]ᵀ ∈ ℝ⁷`.
+Velocity variables (quasi-velocities): `v_i = [Ṙ_iᵀ, ω'_iᵀ]ᵀ ∈ ℝ⁶`, with
+`q̇ = T(q) v`, `T_i = blockdiag(I₃, ½ G(p_i)ᵀ)`.
 
 ---
 
 ## 4. Equations of motion
 
-**Formulation:** absolute coordinates + Lagrange multipliers (DAE).
-
-For each body i, generalized coordinates are
-`q_i = [R_i^T, p_i^T]^T  ∈ ℝ^7`, so the system state size is `n = 7·nB`.
-
-The augmented system (Shabana eq. 6.142–6.146):
+Same structure as PMD (see the thesis chapters on the hybrid formulation):
 
 ```
-| M         Φ_q^T | | q̈ |   | Q_e + Q_v |
-|                 | |   | = |           |
-| Φ_q        0    | | λ  |   |     γ     |
+q̇ = T(q) v + P(q) μ
+M v̇ = h(q, v, t) − Dᵀ λ
+0   = Φ(q, t)                 (joint and driver constraints)
+0   = p_kᵀ p_k − 1             (Euler-parameter normalization, one per body)
 ```
 
-with the Euler-parameter normalization constraint
-`Φ_p,i ≡ p_i^T p_i − 1 = 0` appended to `Φ`.
+- `M = diag(m I₃, J̄)` is **constant and block diagonal** (centroidal body
+  coordinates, inertia in the body frame).
+- `h` collects applied forces (`Tᵀ Q_e`) and the gyroscopic term
+  `−ω' × J̄ ω'`.
+- `D = Φ_q T`; `Φ_q`, `Φ_t` and the acceleration terms come from **automatic
+  differentiation** (CasADi) of the symbolic constraints.
+- `μ` multiplies the normalization; it vanishes on the exact solution and keeps
+  the Euler parameters on the unit sphere without projection.
 
-**Stabilization:** Baumgarte (default α = β = 5) implemented in
-`dynamics/stabilization.py`. Coordinate projection is provided as a fallback
-for ill-conditioned cases.
+Redundant rows (planar mechanisms in 3D) are detected on the assembled
+configuration by rank-revealing QR with column pivoting of `Dᵀ` and removed from
+the DAE (`dynamics/redundancy.py`). Multipliers on all rows are recovered a
+posteriori as the minimum-norm solution of `Dᵀ λ = h − M v̇`.
 
-**Index reduction:** none for now (we integrate the index-1 form obtained by
-twice differentiating the constraints, with Baumgarte). A future
-`coordinates.py` may add coordinate partitioning to obtain a pure ODE.
+No Baumgarte stabilization: position-level constraints are integrated directly.
 
 ---
 
-## 5. Package layout
+## 5. Solvers
 
-`src/aladyn/` — proper *src-layout*. Installable via `pip install -e .`. No
-`sys.path` manipulation in `__init__.py` (PMD's pattern is intentionally
-abandoned).
+Selected by `SpatialMultibodyModel.solve(method=...)`; both return a
+`SimulationResult` (positions, quasi-velocities, quasi-accelerations,
+multipliers on all rows).
 
-| package         | responsibility                                              |
-|-----------------|-------------------------------------------------------------|
-| `core/`         | `Base` counter, `UnitSystem`, logging, generic utilities    |
-| `math/`         | vectors, rotation matrices, quaternions, SE(3) transforms   |
-| `model/`        | `Ground`, `Body`, `Marker`, `shapes`, (future) flex bodies  |
-| `constraints/`  | joints, primitives, drivers, `Function`                     |
-| `forces/`       | gravity, springs, applied forces/torques, user forces       |
-| `dynamics/`     | EoM assembly (M, Φ, Φ_q, γ, Q), coordinate handling, stab.  |
-| `solver/`       | top-level model facade, kinematics / statics / dynamics     |
-| `builder/`      | initial assembly via NR                                     |
-| `io/`           | serialization, exporters                                    |
-| `contact/`      | (placeholder) collision detection + force models            |
-| `sensors/`      | (placeholder) measurement objects                           |
-| `actuators/`    | (placeholder) controllable forces/torques                   |
-| `control/`      | (placeholder) control laws & loops                          |
+| method              | formulation                                  | order | derivatives          |
+|---------------------|----------------------------------------------|-------|----------------------|
+| `radau` (default)   | quasi-velocities, constant `M`, DAE above    | 5     | automatic (CasADi)   |
+| `generalized_alpha` | `q̇ = [Ṙ, ṗ]`, `M = diag(m I, 4 GᵀJ̄G)`       | 2     | hand-written Jacobians |
+
+The generalized-α path keeps the original Euler-parameter form (normalization
+as an explicit constraint with its own multiplier) and serves as an independent
+check and as a base for future comparisons.
+
+---
+
+## 6. Package layout
+
+`src/modyn/` — *src-layout*, installable via `pip install -e .`.
+
+| package         | responsibility                                                   |
+|-----------------|------------------------------------------------------------------|
+| `core/`         | `Base` counter, `UnitSystem`, logging, generic utilities         |
+| `math/`         | vectors, rotation matrices, quaternions, SE(3) transforms        |
+| `model/`        | `Ground`, `RigidBody`, `Marker`, (future) shapes, flex bodies    |
+| `constraints/`  | joints, primitives, drivers, `Function`                          |
+| `forces/`       | gravity, springs, point force, torque, user forces               |
+| `dynamics/`     | EoM assembly (Euler-parameter and quasi-velocity forms), redundancy |
+| `symbolic/`     | CasADi expressions of constraints, forces and the DAE            |
+| `builder/`      | BFS topology and hybrid assembly                                 |
+| `solver/`       | model facade, Radau IIA, generalized-α, statics, reactions       |
+| `io/`           | (placeholder) serialization, exporters                           |
+| `contact/`, `sensors/`, `actuators/`, `control/` | (placeholders)                 |
 
 Cross-package import rule (enforced by review):
 
 ```
-math  →  (no internal deps)
-core  →  (no internal deps)
-model → core, math
-constraints, forces → core, math, model
-dynamics → core, math, model, constraints, forces
-solver → everything except gui / io
-builder → core, math, model, constraints
-io → model, constraints, forces, solver
-gui → solver, io                (one-way; never imported by core code)
+math, core  →  (no internal deps)
+model       → core, math
+constraints, forces → core, math, model   (symbolic helpers imported lazily)
+dynamics    → core, math, model, constraints, forces
+symbolic    → core, math, model, dynamics
+builder     → core, math, model, constraints
+solver      → everything except gui / io
+gui         → solver, io                  (one-way)
 ```
 
-No circular imports. `solver.model.SpatialMultibodyModel` is the only public
-facade that wires everything together.
+`solver.model.SpatialMultibodyModel` is the public facade.
+
+Joints, drivers and forces implement `phi_sym` / `wrench_sym` to be usable by
+the Radau solver; elements without a symbolic form (e.g. `UserForce`) work only
+with the generalized-α solver. The joint coordinates `q0` of a tree joint give
+the pose of the child marker frame relative to the parent marker frame (PMD
+convention), independently of the marker order.
 
 ---
 
-## 6. Testing strategy
+## 7. Testing and validation
 
-- `tests/unit/` — one file per source module; pure-math tests get hammered
-  with `hypothesis`-style randomized inputs (when introduced).
-- `tests/integration/` — assembly, kinematic chains, dynamic benchmarks at
-  the subsystem level.
-- `tests/regression/` — golden trajectories under `refs/`. Regenerated only
-  via an explicit `_regen_refs.py` script (same pattern as PMD).
+- `tests/unit/` — one file per module; symbolic expressions are cross-checked
+  against the hand-written Jacobians on random states.
+- `tests/integration/` — redundant four-bar, solver agreement, spatial
+  benchmarks with reference solutions (free asymmetric body, Lagrange top).
+- `validation/` — three-way comparison with PMD and ADAMS (`run_modyn.py`,
+  `compare_3way.py`), see its README. Plots use `validation/plot_style.py`.
 - Markers: `unit`, `integration`, `regression`, `slow`.
 
-A quaternion-norm drift check and a constraint-violation check
-(`||Φ||∞ < tol`) are part of every dynamic regression test.
+Every dynamic check includes the quaternion-norm drift and the constraint
+violation.
 
 ---
 
-## 7. Coding conventions
+## 8. Coding conventions
 
-- Python ≥ 3.10, type hints on all public APIs.
-- NumPy arrays for runtime data; `numpy.typing.NDArray` in signatures.
-- Docstrings: NumPy style, with explicit reference to Shabana equations,
-  e.g. `# Shabana eq. (6.142)`.
-- Logging via `logging.getLogger(__name__)`; no `print`.
+- Python ≥ 3.10, type hints on public APIs, NumPy arrays at runtime.
+- Docstrings: NumPy style; math notation follows Shabana.
+- Logging via `logging.getLogger(__name__)`; no `print` in the library.
 - Public symbols re-exported from each subpackage `__init__.py`.
-- No optional dependencies imported at module top-level (lazy imports for
-  `gui`, `io` exporters, optional integrators).
-
----
-
-## 8. Roadmap (high level)
-
-1. `math/` — rotations, quaternions, transforms (+ exhaustive unit tests).
-2. `core/` + `model/` — `Base`, `Ground`, `RigidBody`, `Marker`.
-3. `constraints/lower_pair.py` — Revolute, Spherical (minimal viable joint
-   set).
-4. `forces/` — gravity, applied force/torque.
-5. `dynamics/eom.py` + `solver/dynamics.py` — first DAE integration of a 3D
-   pendulum.
-6. Remaining joints, primitive constraints, springs.
-7. `builder/assembly.py` — initial NR assembly.
-8. Examples + regression refs.
-9. `io/serialization.py` — JSON model save/load.
-10. GUI (mirror PMD).
-11. Contact, flexible bodies, sensors/actuators/control.
+- CasADi is a dependency of the Radau solver and the symbolic layer; the
+  `*_sym` methods import it lazily.
