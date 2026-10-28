@@ -217,7 +217,8 @@ class GeneralizedAlpha:
             rhs[:n] = -r1
             rhs[n:] = -phi / beta_prime
 
-            delta = np.linalg.solve(St, rhs)
+            # Least squares keeps the Newton step defined for redundant constraints.
+            delta, *_ = np.linalg.lstsq(St, rhs, rcond=None)
             qddot = qddot + delta[:n]
             lam = lam + delta[n:]
 

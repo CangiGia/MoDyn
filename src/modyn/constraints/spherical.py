@@ -14,10 +14,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
+from ..math import quaternions as _q
 from ._common import assemble_rows, coincidence_rows
-from .base import Constraint, JacobianBlock
+from .base import Constraint, JacobianBlock, check_q0
 
 if TYPE_CHECKING:
     from ..model.marker import Marker
@@ -46,9 +47,18 @@ class SphericalJoint(Constraint):
     """
 
     n_eq: int = 3
+    n_dof: int = 3
 
-    def __init__(self, marker_i: Marker, marker_j: Marker, *, name: str | None = None) -> None:
+    def __init__(
+        self,
+        marker_i: Marker,
+        marker_j: Marker,
+        *,
+        q0: ArrayLike | None = None,
+        name: str | None = None,
+    ) -> None:
         super().__init__(name=name)
+        self._q0 = check_q0(q0, self.n_dof, "SphericalJoint")
         self._mi = marker_i
         self._mj = marker_j
 
@@ -66,6 +76,12 @@ class SphericalJoint(Constraint):
 
     def _rows(self):
         return [coincidence_rows(self._mi, self._mj)]
+
+    def relative_transform(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Rotation given by the rotation vector ``q0``, no translation."""
+        angle = float(np.linalg.norm(self._q0))
+        axis = self._q0 if angle > 0.0 else np.array([0.0, 0.0, 1.0])
+        return _q.A(_q.from_axis_angle(axis, angle)), np.zeros(3)
 
     def phi(self) -> NDArray[np.float64]:
         """Residual ``r_i^P - r_j^P``."""

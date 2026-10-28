@@ -1,5 +1,10 @@
 """Initial assembly utilities.
 
-Newton-Raphson on ``Φ(q) = 0`` (including Euler-parameter normalization) to
-move user-supplied initial guesses onto the constraint manifold.
+Topological placement of the bodies from joint coordinates (BFS spanning tree)
+followed by a minimum-norm Newton loop closure on ``Φ(q) = 0`` (including
+Euler-parameter normalization), as in PMD.
 """
+
+from .assembly import Topology, TreeEdge, assemble_topology, build_topology, place_bodies
+
+__all__ = ["Topology", "TreeEdge", "assemble_topology", "build_topology", "place_bodies"]

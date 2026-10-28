@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from ..constraints.base import Constraint
     from ..dynamics.coordinates import SystemCoordinates
 
-__all__ = ["AssemblyResult", "assemble_position", "solve_velocity"]
+__all__ = ["AssemblyResult", "assemble_position", "solve_velocity", "time_derivative"]
 
 
 class AssemblyResult(NamedTuple):
@@ -109,10 +109,34 @@ def assemble_position(
     return AssemblyResult(residual_norm <= tol, max_iter, residual_norm)
 
 
+def time_derivative(
+    constraints: list[Constraint], layout: SystemCoordinates, t: float, eps: float = 1e-6
+) -> NDArray[np.float64]:
+    r"""Explicit time derivative :math:`\boldsymbol\Phi_t` of the joint constraints.
+
+    Obtained by central differences of the residual with respect to the time
+    held by the rheonomic constraints (zero for scleronomic ones). Returns an
+    array with one entry per joint equation (no normalization rows).
+    """
+    m = sum(c.n_eq for c in constraints)
+
+    def residual(time: float) -> NDArray[np.float64]:
+        for c in constraints:
+            c.set_time(time)
+        return constraint_residual(constraints, layout)[:m]
+
+    try:
+        return (residual(t + eps) - residual(t - eps)) / (2.0 * eps)
+    finally:
+        for c in constraints:
+            c.set_time(t)
+
+
 def solve_velocity(
     layout: SystemCoordinates,
     constraints: list[Constraint],
     rhs: ArrayLike | None = None,
+    t: float | None = None,
 ) -> NDArray[np.float64]:
     r"""Make the stored velocities satisfy the velocity-level constraint.
 
@@ -124,10 +148,13 @@ def solve_velocity(
         \dot{\mathbf q} \leftarrow \dot{\mathbf q}_0
         + \boldsymbol\Phi_q^{+}\,(\boldsymbol\nu - \boldsymbol\Phi_q\,\dot{\mathbf q}_0).
 
-    With ``rhs = None`` (the scleronomic case) this projects the velocities
-    onto the constraint tangent space, in particular forcing each quaternion
-    rate onto the unit-sphere tangent (:math:`\mathbf p^\mathsf{T}\dot{\mathbf p}=0`).
-    The corrected velocities are scattered back onto the bodies.
+    With ``rhs = None`` and ``t = None`` (the scleronomic case) this projects
+    the velocities onto the constraint tangent space, in particular forcing
+    each quaternion rate onto the unit-sphere tangent
+    (:math:`\mathbf p^\mathsf{T}\dot{\mathbf p}=0`). When the time ``t`` is
+    given, the right-hand side is :math:`\boldsymbol\nu = -\boldsymbol\Phi_t`,
+    which accounts for the rheonomic constraints (drivers). The corrected
+    velocities are scattered back onto the bodies.
 
     Parameters
     ----------
@@ -137,7 +164,10 @@ def solve_velocity(
         Joint constraints (normalization is appended automatically).
     rhs
         Optional velocity-constraint right-hand side :math:`\boldsymbol\nu`,
-        shape ``(m,)``. Defaults to zero.
+        shape ``(m,)``. Overrides ``t``.
+    t
+        Current time; if given and ``rhs`` is ``None``, the explicit time
+        derivative of the constraints is included.
 
     Returns
     -------
@@ -146,11 +176,13 @@ def solve_velocity(
     """
     Phi_q = constraint_jacobian(constraints, layout)
     m = Phi_q.shape[0]
-    nu = (
-        np.zeros(m, dtype=np.float64)
-        if rhs is None
-        else np.asarray(rhs, dtype=np.float64).reshape(m)
-    )
+    if rhs is not None:
+        nu = np.asarray(rhs, dtype=np.float64).reshape(m)
+    else:
+        nu = np.zeros(m, dtype=np.float64)
+        if t is not None and constraints:
+            m_joint = sum(c.n_eq for c in constraints)
+            nu[:m_joint] = -time_derivative(constraints, layout, t)
 
     qdot0 = layout.assemble_qdot()
     correction, *_ = np.linalg.lstsq(Phi_q, nu - Phi_q @ qdot0, rcond=None)

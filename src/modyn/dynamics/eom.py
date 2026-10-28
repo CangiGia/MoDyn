@@ -263,7 +263,8 @@ def solve_accelerations(
         Lagrange multipliers :math:`\boldsymbol\lambda`.
     """
     sys = assemble_augmented(layout, constraints, applied_forces)
-    sol = np.linalg.solve(sys.A, sys.b)
+    # Least squares keeps the solve well defined for redundant constraints.
+    sol, *_ = np.linalg.lstsq(sys.A, sys.b, rcond=None)
     return sol[: sys.n_coords], sol[sys.n_coords :]
 
 

@@ -183,13 +183,15 @@ def integrate_dynamics(
 
     # ── Consistent initial conditions ─────────────────────────────────
     if project_initial:
+        for c in constraints:
+            c.set_time(t0)
         assemble_position(
             layout,
             constraints,
             tol=assembly_tol,
             max_iter=assembly_max_iter,
         )
-        solve_velocity(layout, constraints)
+        solve_velocity(layout, constraints, t=t0)
 
     q0 = layout.assemble_q()
     qdot0 = layout.assemble_qdot()

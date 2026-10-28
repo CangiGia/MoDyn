@@ -34,10 +34,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
 from ._common import assemble_rows, dot1_row, dot2_row
-from .base import Constraint, JacobianBlock
+from .base import Constraint, JacobianBlock, check_q0
 
 if TYPE_CHECKING:
     from ..model.marker import Marker
@@ -53,9 +53,18 @@ class PrismaticJoint(Constraint):
     """Sliding joint along the z-axis of two markers; locks all rotations."""
 
     n_eq: int = 5
+    n_dof: int = 1
 
-    def __init__(self, marker_i: Marker, marker_j: Marker, *, name: str | None = None) -> None:
+    def __init__(
+        self,
+        marker_i: Marker,
+        marker_j: Marker,
+        *,
+        q0: ArrayLike | None = None,
+        name: str | None = None,
+    ) -> None:
         super().__init__(name=name)
+        self._q0 = check_q0(q0, self.n_dof, "PrismaticJoint")
         self._mi = marker_i
         self._mj = marker_j
         self._x_i_body = marker_i.orientation_local @ _EX
@@ -81,6 +90,10 @@ class PrismaticJoint(Constraint):
             dot2_row(self._mi, self._x_i_body, self._mi, self._mj),
             dot2_row(self._mi, self._y_i_body, self._mi, self._mj),
         ]
+
+    def relative_transform(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Aligned frames, displacement ``q0`` along the common z-axis."""
+        return np.eye(3), np.array([0.0, 0.0, self._q0[0]])
 
     def phi(self) -> NDArray[np.float64]:
         """Stack of the 5 scalar residuals."""

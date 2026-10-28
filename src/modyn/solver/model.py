@@ -10,15 +10,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy as np
+
+from ..builder import Topology, assemble_topology
+from ..dynamics import quasi as _quasi
 from ..dynamics.coordinates import SystemCoordinates
 from ..forces import Force, to_force_fn
 from .dynamics import DynamicsResult, integrate_dynamics
 from .kinematics import AssemblyResult, assemble_position, solve_velocity
+from .result import SimulationResult
 from .statics import StaticsResult, find_equilibrium
 
 if TYPE_CHECKING:
     from ..constraints.base import Constraint
     from ..model.body import RigidBody
+    from ..symbolic import SymbolicSystem
 
 __all__ = ["SpatialMultibodyModel"]
 
@@ -43,6 +49,8 @@ class SpatialMultibodyModel:
         self._joints: list[Constraint] = []
         self._forces: list[Force] = []
         self._layout: SystemCoordinates | None = None
+        self._symbolic: SymbolicSystem | None = None
+        self._topology: Topology | None = None
 
     # ── Registration ──────────────────────────────────────────────────
 
@@ -50,14 +58,17 @@ class SpatialMultibodyModel:
         """Add a body to the model and invalidate the cached layout."""
         self._bodies.append(body)
         self._layout = None
+        self._symbolic = None
 
     def add_joint(self, joint: Constraint) -> None:
         """Add a joint constraint to the model."""
         self._joints.append(joint)
+        self._symbolic = None
 
     def add_force(self, force: Force) -> None:
         """Add a force element to the model."""
         self._forces.append(force)
+        self._symbolic = None
 
     # ── Layout ────────────────────────────────────────────────────────
 
@@ -83,26 +94,59 @@ class SpatialMultibodyModel:
         """Registered force elements."""
         return list(self._forces)
 
+    @property
+    def topology(self) -> Topology | None:
+        """Tree/cut-joint classification of the last topological assembly, if any."""
+        return self._topology
+
+    def symbolic(self) -> SymbolicSystem:
+        """CasADi description of the model (cached until the model changes)."""
+        from ..symbolic import SymbolicSystem
+
+        if self._symbolic is None:
+            self._symbolic = SymbolicSystem(self.layout, self._joints, self._forces)
+        return self._symbolic
+
     # ── Analysis drivers ──────────────────────────────────────────────
 
     def assemble(
         self,
         *,
+        topology: bool | None = None,
+        t0: float = 0.0,
         tol: float = 1e-10,
         max_iter: int = 50,
     ) -> AssemblyResult:
-        """Project positions onto the constraint manifold and correct velocities.
+        """Bring the model to a consistent initial configuration.
 
-        Calls :func:`~modyn.solver.kinematics.assemble_position` then
-        :func:`~modyn.solver.kinematics.solve_velocity`.
+        With ``topology=True`` (or ``None`` when some joint carries initial
+        joint coordinates ``q0``) the bodies are placed from the joint
+        coordinates along the BFS spanning tree and the loops are closed with
+        Newton (the hybrid assembly of the formulation,
+        :func:`~modyn.builder.assemble_topology`). Otherwise the user-given
+        poses are projected onto the constraints with
+        :func:`~modyn.solver.kinematics.assemble_position`. In both cases the
+        velocities are then corrected with
+        :func:`~modyn.solver.kinematics.solve_velocity`, including the
+        explicit time dependence of the drivers at ``t0``.
 
         Returns
         -------
         AssemblyResult
             Position-assembly outcome (convergence, iterations, residual).
         """
-        result = assemble_position(self.layout, self._joints, tol=tol, max_iter=max_iter)
-        solve_velocity(self.layout, self._joints)
+        use_topology = (
+            any(j.q0 is not None for j in self._joints) if topology is None else topology
+        )
+        if use_topology:
+            self._topology, result = assemble_topology(
+                self.layout, self._joints, t0=t0, tol=tol, max_iter=max_iter
+            )
+        else:
+            for c in self._joints:
+                c.set_time(t0)
+            result = assemble_position(self.layout, self._joints, tol=tol, max_iter=max_iter)
+        solve_velocity(self.layout, self._joints, t=t0)
         return result
 
     def find_equilibrium(
@@ -185,3 +229,67 @@ class SpatialMultibodyModel:
             assembly_tol=assembly_tol,
             assembly_max_iter=assembly_max_iter,
         )
+
+    def solve(
+        self,
+        t_span: tuple[float, float],
+        dt: float,
+        *,
+        method: str = "radau",
+        assemble: bool = True,
+        **options,
+    ) -> SimulationResult:
+        r"""Run a dynamic analysis with the chosen solver.
+
+        Parameters
+        ----------
+        t_span, dt
+            ``(t0, tf)`` and the (uniform) step of the output grid.
+        method
+            ``"radau"`` (default): direct index-3 integration with Radau IIA
+            collocation in quasi-velocities, the solver of the hybrid
+            formulation (:func:`~modyn.solver.collocation.integrate_radau`);
+            ``"generalized_alpha"``: generalized-:math:`\alpha` on the
+            Euler-parameter form (:func:`~modyn.solver.dynamics.integrate_dynamics`).
+        assemble
+            Run :meth:`assemble` at ``t0`` first (topological placement from
+            ``q0`` when available, loop closure, consistent velocities).
+        **options
+            Forwarded to the selected solver.
+
+        Returns
+        -------
+        SimulationResult
+            Positions, quasi-velocities, quasi-accelerations and multipliers
+            on all constraint rows, in a solver-independent format.
+        """
+        if assemble:
+            self.assemble(t0=t_span[0])
+        if method == "radau":
+            from .collocation import integrate_radau
+
+            return integrate_radau(
+                self.layout, self._joints, self._forces, t_span, dt, **options
+            )
+        if method in ("generalized_alpha", "gen_alpha"):
+            from .postprocess import simulation_from_dynamics
+
+            options.setdefault("project_initial", False)
+            raw = self.run_dynamics(t_span, dt, **options)
+            return simulation_from_dynamics(self.layout, self._joints, self._forces, raw)
+        raise ValueError(f"unknown method {method!r}; use 'radau' or 'generalized_alpha'")
+
+    def reaction(
+        self,
+        result: SimulationResult,
+        joint: Constraint,
+        side: str = "i",
+        frame: str = "global",
+    ) -> np.ndarray:
+        """Force and torque exerted by ``joint`` on the body of marker ``side``.
+
+        See :func:`~modyn.solver.reactions.joint_reaction`.
+        """
+        from .reactions import joint_reaction
+
+        return joint_reaction(self.symbolic(), result, joint, side=side, frame=frame)

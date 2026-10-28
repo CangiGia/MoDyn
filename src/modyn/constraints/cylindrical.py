@@ -29,10 +29,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
+from ..math.rotations import rotz
 from ._common import assemble_rows, dot1_row, dot2_row
-from .base import Constraint, JacobianBlock
+from .base import Constraint, JacobianBlock, check_q0
 
 if TYPE_CHECKING:
     from ..model.marker import Marker
@@ -48,9 +49,18 @@ class CylindricalJoint(Constraint):
     """Translation + rotation about a common z-axis between two markers."""
 
     n_eq: int = 4
+    n_dof: int = 2
 
-    def __init__(self, marker_i: Marker, marker_j: Marker, *, name: str | None = None) -> None:
+    def __init__(
+        self,
+        marker_i: Marker,
+        marker_j: Marker,
+        *,
+        q0: ArrayLike | None = None,
+        name: str | None = None,
+    ) -> None:
         super().__init__(name=name)
+        self._q0 = check_q0(q0, self.n_dof, "CylindricalJoint")
         self._mi = marker_i
         self._mj = marker_j
         self._x_i_body = marker_i.orientation_local @ _EX
@@ -74,6 +84,10 @@ class CylindricalJoint(Constraint):
             dot2_row(self._mi, self._x_i_body, self._mi, self._mj),
             dot2_row(self._mi, self._y_i_body, self._mi, self._mj),
         ]
+
+    def relative_transform(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Rotation ``q0[0]`` about and displacement ``q0[1]`` along the common z-axis."""
+        return rotz(self._q0[0]), np.array([0.0, 0.0, self._q0[1]])
 
     def phi(self) -> NDArray[np.float64]:
         """Stack of the 4 scalar residuals."""

@@ -30,10 +30,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
+from ..math.rotations import rotz
 from ._common import assemble_rows, dot1_row, dot2_row
-from .base import Constraint, JacobianBlock
+from .base import Constraint, JacobianBlock, check_q0
 
 if TYPE_CHECKING:
     from ..model.marker import Marker
@@ -49,9 +50,18 @@ class PlanarJoint(Constraint):
     """Point-in-plane with parallel-normal lock; 3 DoFs survive."""
 
     n_eq: int = 3
+    n_dof: int = 3
 
-    def __init__(self, marker_i: Marker, marker_j: Marker, *, name: str | None = None) -> None:
+    def __init__(
+        self,
+        marker_i: Marker,
+        marker_j: Marker,
+        *,
+        q0: ArrayLike | None = None,
+        name: str | None = None,
+    ) -> None:
         super().__init__(name=name)
+        self._q0 = check_q0(q0, self.n_dof, "PlanarJoint")
         self._mi = marker_i
         self._mj = marker_j
         self._x_i_body = marker_i.orientation_local @ _EX
@@ -75,6 +85,10 @@ class PlanarJoint(Constraint):
             dot1_row(self._mi, self._y_i_body, self._mj, self._z_j_body),
             dot2_row(self._mi, self._z_i_body, self._mi, self._mj),
         ]
+
+    def relative_transform(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """In-plane translation ``q0[:2]`` and rotation ``q0[2]`` about the plane normal."""
+        return rotz(self._q0[2]), np.array([self._q0[0], self._q0[1], 0.0])
 
     def phi(self) -> NDArray[np.float64]:
         """Stack of the 3 scalar residuals."""

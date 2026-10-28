@@ -25,10 +25,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike, NDArray
 
+from ..math.rotations import rotz
 from ._common import assemble_rows, coincidence_rows, dot1_row
-from .base import Constraint, JacobianBlock
+from .base import Constraint, JacobianBlock, check_q0
 
 if TYPE_CHECKING:
     from ..model.marker import Marker
@@ -62,9 +63,18 @@ class RevoluteJoint(Constraint):
     """
 
     n_eq: int = 5
+    n_dof: int = 1
 
-    def __init__(self, marker_i: Marker, marker_j: Marker, *, name: str | None = None) -> None:
+    def __init__(
+        self,
+        marker_i: Marker,
+        marker_j: Marker,
+        *,
+        q0: ArrayLike | None = None,
+        name: str | None = None,
+    ) -> None:
         super().__init__(name=name)
+        self._q0 = check_q0(q0, self.n_dof, "RevoluteJoint")
         self._mi = marker_i
         self._mj = marker_j
         # Body-frame x/y axes on marker_i and z axis on marker_j.
@@ -88,6 +98,10 @@ class RevoluteJoint(Constraint):
             dot1_row(self._mi, self._x_i_body, self._mj, self._z_j_body),
             dot1_row(self._mi, self._y_i_body, self._mj, self._z_j_body),
         ]
+
+    def relative_transform(self) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+        """Rotation ``q0`` about the common z-axis, no translation."""
+        return rotz(self._q0[0]), np.zeros(3)
 
     def phi(self) -> NDArray[np.float64]:
         """Stack of coincidence (3) and two axis-alignment dot products (2)."""
